@@ -1,0 +1,31 @@
+module.exports = {
+  parser: '@typescript-eslint/parser',
+  parserOptions: {
+    ecmaVersion: 2021,
+    sourceType: 'module',
+  },
+  plugins: ['@typescript-eslint'],
+  extends: [
+    'eslint:recommended',
+    'plugin:@typescript-eslint/recommended',
+    'plugin:prettier/recommended',
+  ],
+  rules: {
+    'no-console': 'warn',
+    'no-unused-expressions': 'error',
+    'no-undef': 'off', // Not needed with TypeScript
+    'no-unused-vars': 'off', // Disable base rule
+    '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
+    '@typescript-eslint/consistent-type-definitions': ['error', 'type'],
+    'prefer-const': 'error',
+  },
+  env: {
+    node: true,
+    es2020: true,
+    browser: true,
+  },
+  ignorePatterns: ['dist/', 'node_modules/'],
+  globals: {
+    process: 'readonly',
+  },
+};

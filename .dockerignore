@@ -1,0 +1,22 @@
+node_modules
+dist
+.vscode
+.vercel
+uploads
+.git
+.gitignore
+.env  
+Dockerfile
+logs/
+*.log
+*.log.*
+
+# testing
+/coverage
+
+# production
+/build
+
+# misc
+*.pem
+

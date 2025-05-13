@@ -1,0 +1,224 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+# Node Express TypeScript Project Cursor Rules
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── errors/         # Custom error classes
+│   ├── middlewares/    # Application middlewares
+│   ├── modules/        # Feature modules (follow modular architecture)
+│   └── routers/        # API route definitions
+├── config/             # App configuration
+├── interfaces/         # TypeScript interfaces
+├── shared/             # Shared utilities and helpers
+├── utils/              # Utility functions
+├── app.ts              # Express app setup
+└── server.ts           # Server initialization
+```
+
+## Module Structure
+
+When implementing a new feature/module, follow this structure:
+
+```
+src/app/modules/[moduleName]/
+├── [module].model.ts      # Data model (Mongoose schema)
+├── [module].routes.ts     # Route definitions
+├── [module].controller.ts # Request handlers
+├── [module].service.ts    # Business logic
+├── [module].validator.ts  # Input validation schemas
+└── [module].interface.ts  # Type definitions (optional)
+```
+
+## Implementation Guidelines
+
+### 1. Module Development Flow
+
+1. Define the data model in `[module].model.ts`
+2. Create TypeScript interfaces in `[module].interface.ts`
+3. Implement service layer logic in `[module].service.ts`
+4. Create validation schemas in `[module].validator.ts`
+5. Set up controllers in `[module].controller.ts`
+6. Define routes in `[module].routes.ts`
+7. Register routes in version router file (`src/app/routers/versionX.ts`)
+
+### 2. Error Handling
+
+- Use custom error classes from `src/app/errors/`
+- Pass errors to the global handler using `next(error)`
+- Error classes include: BadRequestError, UnAuthorizedError, ForbiddenError, NotFoundError
+
+Example:
+```typescript
+import CustomError from '../errors';
+throw new CustomError.BadRequestError('Invalid input data');
+```
+
+### 3. Response Format
+
+All API responses must follow this structure:
+
+```typescript
+{
+  message: string;    // Human-readable success/failure message
+  data?: any;         // Response data (optional)
+  meta?: {           // Pagination metadata (optional)
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  }
+}
+```
+
+Example:
+```typescript
+res.status(StatusCodes.OK).json({
+  message: 'Resources retrieved successfully',
+  data: result,
+  meta: paginationInfo
+});
+```
+
+### 4. Pagination
+
+Implement pagination in controller methods:
+
+```typescript
+// Extract pagination parameters
+const page = Number(req.query.page) || 1;
+const limit = Number(req.query.limit) || 10;
+const skip = (page - 1) * limit;
+
+// Query with pagination
+const result = await Model.find(filters).skip(skip).limit(limit);
+const total = await Model.countDocuments(filters);
+
+// Return with pagination metadata
+res.status(StatusCodes.OK).json({
+  message: 'Resources retrieved successfully',
+  data: result,
+  meta: {
+    page,
+    limit,
+    total,
+    totalPages: Math.ceil(total / limit)
+  }
+});
+```
+
+### 5. Request Validation
+
+Define validation schemas with Joi and apply the validator middleware:
+
+```typescript
+// In module.validator.ts
+export const createSchema = Joi.object({
+  name: Joi.string().required(),
+  email: Joi.string().email().required()
+});
+
+// In module.routes.ts
+import requestValidator from '../../middlewares/requestValidator';
+import { createSchema } from './module.validator';
+
+router.post('/', requestValidator(createSchema), controller.create);
+```
+
+### 6. Authorization
+
+Implement authentication and role-based authorization:
+
+```typescript
+import authentication from '../../middlewares/authorization';
+
+// Public routes
+router.get('/', controller.getAll);
+
+// Protected routes
+router.post('/', authentication(), controller.create);
+
+// Role-based routes
+router.delete('/:id', authentication('admin'), controller.delete);
+```
+
+### 7. Configuration Management
+
+- Define and validate all environment variables in `src/config/index.ts`
+- Access config values via the config object:
+
+```typescript
+import config from '../../config';
+
+const mongoUrl = config.mongodb.url;
+const jwtSecret = config.jwt.accessToken.secret;
+```
+
+To add new config variables:
+1. Add to Joi validation schema in `config/index.ts`
+2. Add to the config object
+3. Add to your `.env` file
+
+## Example Module Implementation
+
+1. Create module files following the structure:
+
+```typescript
+// user.model.ts
+import mongoose from 'mongoose';
+
+const userSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, 'Name is required']
+  },
+  email: {
+    type: String,
+    required: [true, 'Email is required'],
+    unique: true
+  }
+}, { timestamps: true });
+
+export const User = mongoose.model('User', userSchema);
+
+// user.routes.ts
+import express from 'express';
+import userController from './user.controller';
+import requestValidator from '../../middlewares/requestValidator';
+import { createUserSchema } from './user.validator';
+import authentication from '../../middlewares/authorization';
+
+const router = express.Router();
+
+router.get('/', userController.getAll);
+router.get('/:id', userController.getById);
+router.post('/', requestValidator(createUserSchema), userController.create);
+router.put('/:id', authentication(), requestValidator(updateUserSchema), userController.update);
+router.delete('/:id', authentication('admin'), userController.delete);
+
+export default router;
+
+// In version1.ts
+import userRouter from '../modules/user/user.routes';
+routersVersionOne.use('/users', userRouter);
+```
+
+## Best Practices
+
+1. Always use custom error classes and pass to `next(error)`
+2. Maintain consistent response format across all endpoints
+3. Validate all incoming request data
+4. Apply authentication middleware to protected routes
+5. Access environment variables through the config object
+6. Keep related code together in modules
+7. Separate business logic (services) from controllers
+8. Use proper TypeScript typing
+9. Document complex logic with comments
+10. Follow consistent naming conventions
+

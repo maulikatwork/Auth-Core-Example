@@ -1,0 +1,17 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Deployment
+        run: |
+          curl -X POST http://68.183.80.44:3000/api/deploy/84aa16011934afc7fe224817d04a9b60e22c3c493c379b87
+
+      - name: Deployment Status
+        run: echo "Deployment triggered successfully"
