@@ -5,28 +5,16 @@ import asyncHandler from '../../../shared/asyncHandler';
 import sendResponse from '../../../shared/sendResponse';
 import { IAuthResponse } from './auth.interface';
 import config from '../../../config';
+import { sendOtp, verifyOtp } from 'auth-core';
 
 // Request OTP for phone login
 const requestOtp = asyncHandler(async (req: Request, res: Response) => {
-  const result = await AuthService.requestOtp(req.body);
-
-  // Send response
-  sendResponse(res, {
-    success: true,
-    message: result.message,
-    data: null,
-  });
+  await sendOtp(req, res);
 });
 
 // Verify OTP and login
 const verifyOtpAndLogin = asyncHandler(async (req: Request, res: Response) => {
-  const result = await AuthService.verifyOtpAndLogin(req.body, res);
-
-  sendResponse<IAuthResponse>(res, {
-    success: true,
-    message: result.message,
-    data: result,
-  });
+  await verifyOtp(req, res);
 });
 
 // Logout
